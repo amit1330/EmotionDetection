@@ -1,3 +1,5 @@
+"""Emotion detection module."""
+
 import requests
 
 
@@ -20,14 +22,45 @@ def emotion_detector(text_to_analyse):
         }
     }
 
-    response = requests.post(
-        url,
-        json=input_json,
-        headers=headers,
-        timeout=10
-    )
+    try:
+        response = requests.post(
+            url,
+            json=input_json,
+            headers=headers,
+            timeout=60
+        )
 
-    if response.status_code == 400:
+        if response.status_code == 400:
+            return {
+                'anger': None,
+                'disgust': None,
+                'fear': None,
+                'joy': None,
+                'sadness': None,
+                'dominant_emotion': None
+            }
+
+        formatted_response = response.json()
+
+        emotions = formatted_response[
+            'emotionPredictions'
+        ][0]['emotion']
+
+        dominant_emotion = max(
+            emotions,
+            key=emotions.get
+        )
+
+        return {
+            'anger': emotions['anger'],
+            'disgust': emotions['disgust'],
+            'fear': emotions['fear'],
+            'joy': emotions['joy'],
+            'sadness': emotions['sadness'],
+            'dominant_emotion': dominant_emotion
+        }
+
+    except requests.exceptions.RequestException:
         return {
             'anger': None,
             'disgust': None,
@@ -36,23 +69,3 @@ def emotion_detector(text_to_analyse):
             'sadness': None,
             'dominant_emotion': None
         }
-
-    formatted_response = response.json()
-
-    emotions = formatted_response[
-        'emotionPredictions'
-    ][0]['emotion']
-
-    dominant_emotion = max(
-        emotions,
-        key=emotions.get
-    )
-
-    return {
-        'anger': emotions['anger'],
-        'disgust': emotions['disgust'],
-        'fear': emotions['fear'],
-        'joy': emotions['joy'],
-        'sadness': emotions['sadness'],
-        'dominant_emotion': dominant_emotion
-    }
