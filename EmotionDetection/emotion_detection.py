@@ -1,49 +1,56 @@
-import random
+"""
+Emotion Detection using Watson NLP
+"""
+
+import requests
+import json
 
 
 def emotion_detector(text_to_analyze):
     """
-    Detect emotions from text
+    Analyze emotions from text using Watson NLP API
     """
 
     if text_to_analyze.strip() == "":
         return None
 
-    text = text_to_analyze.lower()
+    url = (
+        "https://sn-watson-emotion.labs.skills.network/"
+        "v1/watson.runtime.nlp.v1/NlpService/EmotionPredict"
+    )
 
-    emotions = {
-        'anger': 0.0,
-        'disgust': 0.0,
-        'fear': 0.0,
-        'joy': 0.0,
-        'sadness': 0.0
+    headers = {
+        "grpc-metadata-mm-model-id":
+        "emotion_aggregated-workflow_lang_en_stock"
     }
 
-    if any(word in text for word in ['happy', 'joy', 'glad', 'excited']):
-        emotions['joy'] = 0.95
+    input_json = {
+        "raw_document": {
+            "text": text_to_analyze
+        }
+    }
 
-    elif any(word in text for word in ['sad', 'upset', 'cry']):
-        emotions['sadness'] = 0.95
+    response = requests.post(
+        url,
+        json=input_json,
+        headers=headers
+    )
 
-    elif any(word in text for word in ['angry', 'mad', 'furious']):
-        emotions['anger'] = 0.95
+    if response.status_code == 400:
+        return None
 
-    elif any(word in text for word in ['fear', 'afraid', 'scared']):
-        emotions['fear'] = 0.95
+    formatted_response = json.loads(response.text)
 
-    elif any(word in text for word in ['disgust', 'disgusted']):
-        emotions['disgust'] = 0.95
-
-    else:
-        emotions[random.choice(list(emotions.keys()))] = 0.5
+    emotions = formatted_response["emotionPredictions"][0]["emotion"]
 
     dominant_emotion = max(emotions, key=emotions.get)
 
     return {
-        'anger': emotions['anger'],
-        'disgust': emotions['disgust'],
-        'fear': emotions['fear'],
-        'joy': emotions['joy'],
-        'sadness': emotions['sadness'],
-        'dominant_emotion': dominant_emotion
+        "anger": emotions["anger"],
+        "disgust": emotions["disgust"],
+        "fear": emotions["fear"],
+        "joy": emotions["joy"],
+        "sadness": emotions["sadness"],
+        "dominant_emotion": dominant_emotion
     }
+
